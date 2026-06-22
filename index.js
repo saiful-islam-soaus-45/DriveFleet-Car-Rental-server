@@ -6,7 +6,7 @@ dotenv.config()
 
 const uri = process.env.MONGODB_URI;
 const app = express()
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 5000;
 app.use(cors())
 app.use(express.json())
 
@@ -36,6 +36,28 @@ async function run() {
       const result = await addCarCollection.insertOne(addCarData);
       res.send(result);
     })
+
+    // ১. বুকিং ডাটাবেজে সেভ করার এপিআই
+app.post('/bookings', async (req, res) => {
+  try {
+    const bookingData = req.body;
+    // 'bookings' নামে একটি নতুন কালেকশন তৈরি হবে মঙ্গোডিবিতে
+    const result = await client.db("drivefleet").collection("bookings").insertOne(bookingData);
+    res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Booking failed to save" });
+  }
+});
+
+// ২. সব বুকিং গেট করার এপিআই (যাতে My Bookings পেজে দেখানো যায়)
+app.get('/bookings', async (req, res) => {
+  try {
+    const result = await client.db("drivefleet").collection("bookings").find().toArray();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch bookings" });
+  }
+});
 
     app.get('/explore-cars/:id', async (req, res) => {
       const { id } = req.params;
