@@ -65,6 +65,36 @@ app.get('/bookings', async (req, res) => {
       res.json(result);
     })
 
+    // ৩. নির্দিষ্ট গাড়ি আপডেট করার API (PUT) - Edit Modal এর জন্য
+app.put('/explore-cars/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedData = req.body;
+    
+    // ডাটাবেজে আপডেট করার সময় যাতে কোনো ডুপ্লিকেট আইডি ক্র্যাশ না করে, তাই _id বাদ দিয়ে ফিল্টার করে নেওয়া
+    const { _id, ...updateFields } = updatedData; 
+
+    const result = await addCarCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateFields }
+    );
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update car data" });
+  }
+});
+
+// ৪. নির্দিষ্ট গাড়ি ডিলিট করার API (DELETE) - Delete Modal এর জন্য
+app.delete('/explore-cars/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await addCarCollection.deleteOne({ _id: new ObjectId(id) });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete car" });
+  }
+});
+
 
 
 
