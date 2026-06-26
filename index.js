@@ -55,34 +55,40 @@ async function run() {
 
     // 🚘 ১. সব গাড়ি, সার্চ ($regex), ফিল্টার ($in) অথবা ইউজারের ইমেইল অনুযায়ী গাড়ি গেট করার API
     app.get("/explore-cars", async (req, res) => {
-      try {
-        const userEmail = req.query.email;
-        const search = req.query.search;
-        const carType = req.query.type;
+  try {
+    const { search, type, email } = req.query;
 
-        let query = {};
+    let query = {};
 
-        if (userEmail) {
-          query.email = userEmail;
-        }
+    // User email filter (optional)
+    if (email) {
+      query.email = email;
+    }
 
-        if (search) {
-          query.carModel = {
-            $regex: search,
-            $options: "i",
-          };
-        }
+    // Search by car name using regex
+    if (search) {
+      query.carName = {
+        $regex: search,
+        $options: "i",
+      };
+    }
 
-        if (carType && carType !== "all") {
-          query.vehicleType = { $in: [carType] };
-        }
+    // Filter by car type
+    if (type && type !== "all") {
+      query.carType = {
+        $regex: `^${type}$`,
+        $options: "i",
+      };
+    }
 
-        const result = await addCarCollection.find(query).toArray();
-        res.json(result);
-      } catch (error) {
-        res.status(500).json({ error: "Failed to fetch cars" });
-      }
-    });
+    const result = await addCarCollection.find(query).toArray();
+
+    res.send(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: "Failed to fetch cars" });
+  }
+});
 
     // 🚗 ২. মাই কার্স লিস্টিং API
     app.get("/my-cars", async (req, res) => {
@@ -100,7 +106,7 @@ async function run() {
     });
 
     // ➕ ৩. নতুন গাড়ি ডাটাবেজে সেভ করার API
-    app.post("/add-car", async (req, res) => {
+    app.post("/add-car", verifyToken, async (req, res) => {
       try {
         const addCarData = req.body;
 
@@ -118,7 +124,7 @@ async function run() {
     });
 
     // 📦 ৪. বুকিং ডাটাবেজে সেভ করার এবং গাড়ির বুকিং কাউন্ট বাড়ানোর API
-    app.post("/bookings", async (req, res) => {
+    app.post("/bookings", verifyToken, async (req, res) => {
       try {
         const bookingData = req.body;
 
@@ -145,7 +151,7 @@ async function run() {
     });
 
     // 📄 ৫. সব বুকিং অথবা ইউজারের ইমেইল অনুযায়ী বুকিং গেট করার API
-    app.get("/bookings", async (req, res) => {
+    app.get("/bookings", verifyToken, async (req, res) => {
       try {
         const userEmail = req.query.email;
         let query = {};
@@ -178,7 +184,7 @@ async function run() {
     );
 
     // ✏️ ७. নির্দিষ্ট গাড়ি আপডেট করার API (Edit Modal এর জন্য)
-    app.put("/explore-cars/:id", async (req, res) => {
+    app.put("/explore-cars/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
         const updatedData = req.body;
@@ -196,7 +202,7 @@ async function run() {
     });
 
     // ❌ ৮. নির্দিষ্ট গাড়ি ডিলিট করার API (Delete Modal এর জন্য)
-    app.delete("/explore-cars/:id", async (req, res) => {
+    app.delete("/explore-cars/:id", verifyToken, async (req, res) => {
       try {
         const { id } = req.params;
         const result = await addCarCollection.deleteOne({
